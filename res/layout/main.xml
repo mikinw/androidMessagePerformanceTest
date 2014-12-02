@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+        >
+
+    <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Hello World, MyActivity"
+            />
+
+    <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:digits="1234567890"
+            android:text="1000"
+            android:id="@+id/edittext_amount"/>
+
+    <Button
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:text="Direct method call"
+            android:onClick="onDirectCallClick"
+            />
+    <Button
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:text="Post to handler"
+            android:onClick="onPostToHandlerClick"
+            />
+    <Button
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:text="Ask service to send global broadcast from executor"
+            android:onClick="onServiceExecutorAndGlobalBroadcastClick"
+            />
+    <Button
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:text="Ask service to send global broadcast"
+            android:onClick="onServiceGlobalBroadcastClick"
+            />
+    <Button
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:text="Ask service to send local broadcast"
+            android:onClick="onServiceLocalBroadcastClick"
+            />
+</LinearLayout>
+
