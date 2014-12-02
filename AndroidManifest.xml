@@ -4,7 +4,9 @@
           android:versionCode="1"
           android:versionName="1.0">
 
-    <uses-sdk android:minSdkVersion="18"/>
+    <uses-sdk android:minSdkVersion="18"
+            android:targetSdkVersion="19"/>
+
     <application
             android:label="@string/app_name"
             android:icon="@drawable/ic_launcher">
@@ -16,15 +18,16 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".FragmentManagerInstanceActivity">
-        </activity>
 
         <service
                 android:name="MyService"
                 android:label="MyService"
                 android:permission="uk.co.gamesys.lobby.permissions.PRIVATE">
             <intent-filter>
-                <action android:name="com.example.broadcastReceive.MyService.DO"/>
+                <action android:name="com.example.broadcastReceive.MyService.DO_GLOBAL"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.example.broadcastReceive.MyService.DO_EXECUTOR"/>
             </intent-filter>
         </service>
     </application>

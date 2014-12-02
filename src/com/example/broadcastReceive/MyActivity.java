@@ -7,60 +7,66 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.os.Trace;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.TextView;
 
+/**
+ * IMPORTANT! Do not consider this class to well designed!
+ */
 public class MyActivity extends Activity {
 
     private BroadcastReceiver mBroadcastReceiver;
-
     private Handler mHandler;
-    private MyThread mMyThread;
+    private LocalBroadcastManager mLocalBroadcastManager;
+    private EditText mEditTextCount;
+    private ViewGroup mViewGroup;
+    private Intent mIntent;
+
     private int count = 0;
     private int maxCount = 0;
-    private EditText mEditTextCount;
-    private LocalBroadcastManager mLocalBroadcastManager;
 
     // region Activity lifecycle callbacks
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d("|MQ", "onCreate()");
+        Log.d("androidMessagePerformanceTest", "onCreate()");
 
         setContentView(R.layout.main);
-        mEditTextCount = (EditText)this.findViewById(R.id.edittext_amount);
+        mEditTextCount = (EditText)findViewById(R.id.edittext_amount);
+        mViewGroup = (ViewGroup)findViewById(R.id.layout);
 
         injectObjects();
 
         mLocalBroadcastManager.registerReceiver(mBroadcastReceiver, new IntentFilter(MyService.RECEIVE));
-        mMyThread.run();
-
+        registerReceiver(mBroadcastReceiver, new IntentFilter(MyService.RECEIVE));
     }
 
     private void injectObjects() {
         mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
-        mHandler = new MyHandler(this);
-        mMyThread = new MyThread(this);
+        mHandler = new MyHandler();
         mBroadcastReceiver = new MyBroadcastReceiver();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d("|MQ", "onResume()" + " MyActivity.this: " + MyActivity.this);
-        createService();
+        Log.d("androidMessagePerformanceTest", "onResume()");
+
+        Intent intent = new Intent(MyService.CREATE);
+        intent.setClassName(MyActivity.this, MyService.class.getName());
+        this.startService(intent);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.d("|BR", "onPause()");
-//        mHandler.removeMessages(1);
+        Log.d("androidMessagePerformanceTest", "onPause()");
     }
 
     // endregion Activity lifecycle callbacks
@@ -68,83 +74,95 @@ public class MyActivity extends Activity {
     // region Layout click listeners
 
     public void onDirectCallClick(View view) {
-        count = 0;
-        maxCount = Integer.parseInt(mEditTextCount.getText().toString());
+        igniteProcess();
         Trace.beginSection("onDirectCallClick()");
         for(; count<maxCount; count++) {
             handleResult();
         }
-        Log.d("cash-app", "onDirectCallClick() DONE"); // NON-NLS
-        Trace.endSection();
-    }
-
-
-    public void onServiceExecutorAndGlobalBroadcastClick(View view) {
-        count = 0;
-        maxCount = Integer.parseInt(mEditTextCount.getText().toString());
-        Trace.beginSection("onServiceExecutorAndGlobalBroadcastClick()");
-        Intent intent = new Intent(MyService.DO);
-        this.startService(intent);
+        processEnded("onDirectCallClick()");
     }
 
     public void onPostToHandlerClick(View view) {
-        count = 0;
-        maxCount = Integer.parseInt(mEditTextCount.getText().toString());
+        igniteProcess();
         Trace.beginSection("onPostToHandlerClick()");
         mHandler.dispatchMessage(mHandler.obtainMessage());
     }
 
+    public void onServiceExecutorAndGlobalBroadcastClick(View view) {
+        igniteProcess();
+        mIntent = new Intent(MyService.DO_EXECUTOR);
+        Trace.beginSection("onServiceExecutorAndGlobalBroadcastClick()");
+        this.startService(mIntent);
+    }
+
     public void onServiceGlobalBroadcastClick(View view) {
+        igniteProcess();
+        mIntent = new Intent(MyService.DO_GLOBAL);
+        Trace.beginSection("onServiceGlobalBroadcastClick()");
+        this.startService(mIntent);
 
     }
 
     public void onServiceLocalBroadcastClick(View view) {
-
+        igniteProcess();
+        mIntent = new Intent(MyService.DO_LOCAL);
+        mIntent.setClass(this, MyService.class);
+        Trace.beginSection("onServiceLocalBroadcastClick()");
+        this.startService(mIntent);
     }
 
     // endregion Layout click listeners
 
-    public void createService() {
-        Log.d("|BR", "createService()");
-        Intent intent = new Intent(MyService.CREATE);
-        intent.setClassName(MyActivity.this, MyService.class.getName());
-        this.startService(intent);
-    }
-
-    public void handleResult() {
-        Trace.beginSection("handleResult()");
-
-//        Log.d("|BR", "handleResult()");
+    private void processEnded(final String methodName) {
+        Log.d("androidMessagePerformanceTest", methodName + " DONE"); // NON-NLS
         Trace.endSection();
+        for(int i = 0; i < mViewGroup.getChildCount(); i++) {
+            mViewGroup.getChildAt(i).setEnabled(true);
+        }
     }
 
-    public void handleHandle() {
-        Trace.beginSection("handleHandle()");
-        handleResult();
-        count++;
-        if (count < maxCount) {
-            mHandler.sendMessageDelayed(mHandler.obtainMessage(), 0);
-        } else {
-            Log.d("cash-app", "handleHandle() DONE"); // NON-NLS
-            Trace.endSection();
+    private void igniteProcess() {
+        count = 0;
+        maxCount = Integer.parseInt(mEditTextCount.getText().toString());
+        for(int i = 0; i < mViewGroup.getChildCount(); i++) {
+            mViewGroup.getChildAt(i).setEnabled(false);
         }
+    }
+
+    private void handleResult() {
+        Trace.beginSection("handleResult()");
+// lets do some things here
+//        Log.d("|BR", "handleResult()");
         Trace.endSection();
     }
 
     private class MyBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            Trace.beginSection("onReceive()");
             handleResult();
             count++;
             if (count < maxCount) {
-                Intent nextIntent = new Intent(MyService.DO);
-                nextIntent.setClassName(MyActivity.this, MyService.class.getName());
-                startService(nextIntent);
+                startService(mIntent);
             } else {
-                Log.d("cash-app", "onReceive() DONE"); // NON-NLS
-                Trace.endSection();
+                processEnded("onReceive()");
             }
+            Trace.endSection();
+        }
+    }
 
+    public class MyHandler extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            Trace.beginSection("handleHandle()");
+            handleResult();
+            count++;
+            if (count < maxCount) {
+                mHandler.sendMessageDelayed(mHandler.obtainMessage(), 0);
+            } else {
+                processEnded("handleHandle()");
+            }
+            Trace.endSection();
         }
     }
 }
